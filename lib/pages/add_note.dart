@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_sqlite/models/note_model.dart';
+import 'package:flutter_sqlite/services/database_helper.dart';
 
-class AddNote extends StatefulWidget {
-  const AddNote({super.key});
+class AddNote extends StatelessWidget {
+  final Note? note;
+  AddNote({super.key, this.note});
 
-  @override
-  State<AddNote> createState() => _AddNoteState();
-}
-
-class _AddNoteState extends State<AddNote> {
-  final _title = TextEditingController();
-  final _content = TextEditingController();
   @override
   Widget build(BuildContext context) {
+    final _title = TextEditingController();
+    final _content = TextEditingController();
+    if (note != null) {
+      _title.text = note!.title;
+      _content.text = note!.content;
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "ADD NOTE",
-          style: TextStyle(color: Colors.white),
+        title: Text(
+          note == null ? "ADD NOTE" : "EDIT NOTE",
+          style: const TextStyle(color: Colors.white),
         ),
         centerTitle: true,
         backgroundColor: Colors.blue.shade800,
@@ -62,7 +65,20 @@ class _AddNoteState extends State<AddNote> {
                   height: 25,
                 ),
                 GestureDetector(
-                  onTap: () {
+                  onTap: () async {
+                    final title = _title.value.text;
+                    final content = _content.value.text;
+                    if (title.isEmpty || content.isEmpty) {
+                      return null;
+                    }
+
+                    final Note model =
+                        Note(title: title, content: content, id: note?.id);
+                    if (note == null) {
+                      await DatabaseHelper.addNote(model);
+                    } else {
+                      await DatabaseHelper.updateNote(model);
+                    }
                     Navigator.pop(context);
                   },
                   child: Container(
@@ -71,10 +87,10 @@ class _AddNoteState extends State<AddNote> {
                     decoration: BoxDecoration(
                         color: Colors.blue.shade700,
                         borderRadius: BorderRadius.circular(10)),
-                    child: const Text(
-                      "Save",
+                    child: Text(
+                      note == null ? "Save" : "Edit",
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white, fontSize: 18),
+                      style: const TextStyle(color: Colors.white, fontSize: 18),
                     ),
                   ),
                 )

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_sqlite/components/note_title.dart';
+import 'package:flutter_sqlite/models/note_model.dart';
 import 'package:flutter_sqlite/pages/add_note.dart';
+import 'package:flutter_sqlite/services/database_helper.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -11,20 +14,47 @@ class HomePage extends StatelessWidget {
       appBar: AppBar(
         title: const Text(
           "TODO APP",
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Color.fromRGBO(255, 255, 255, 1)),
         ),
         centerTitle: true,
         backgroundColor: Colors.blue.shade800,
       ),
-      body: const Center(
-          child: Text(
-        "No Todos",
-        style: TextStyle(fontSize: 18),
-      )),
+      body: FutureBuilder<List<Note>?>(
+        future: DatabaseHelper.getAllNotes(),
+        builder: (context, AsyncSnapshot<List<Note>?> snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const CircularProgressIndicator();
+          } else if (snapshot.hasError) {
+            return Center(
+              child: Text(snapshot.error.toString()),
+            );
+          } else if (snapshot.hasData) {
+            if (snapshot.data != null) {
+              return ListView.builder(
+                  itemCount: snapshot.data!.length,
+                  itemBuilder: (context, index) => NoteTile(
+                      onTap: () {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => AddNote(
+                                      note: snapshot.data![index],
+                                    )));
+                      },
+                      title: snapshot.data![index].title,
+                      content: snapshot.data![index].content));
+            } else {
+              return Container();
+            }
+          } else {
+            return Container();
+          }
+        },
+      ),
       floatingActionButton: GestureDetector(
         onTap: () {
-          Navigator.push(context,
-              MaterialPageRoute(builder: (context) => const AddNote()));
+          Navigator.push(
+              context, MaterialPageRoute(builder: (context) => AddNote()));
         },
         child: Container(
             width: 70,
